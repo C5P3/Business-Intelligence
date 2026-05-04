@@ -4,6 +4,9 @@
 .vscode/
 #Cache folder
 .alcache/
+#Data folder (too big for upload)
+.data/
+data/
 #Symbols folder
 .alpackages/
 #Snapshots folder
