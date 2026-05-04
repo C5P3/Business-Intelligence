@@ -21,7 +21,7 @@ from queries import (
 
 st.set_page_config(
     page_title="Flughafen BI Dashboard",
-    page_icon="✈️",
+    page_icon="",
     layout="wide",
 )
 
@@ -62,8 +62,8 @@ if status is not True:
 
 # ── Header ────────────────────────────────────────────────────────────────────
 
-st.title("✈️ Flughafen BI Dashboard")
-st.caption("Datenquelle: FlughafenDB · Stefan Pröll, Eva Zangerle, Wolfgang Gassler (CC BY 4.0)")
+st.title("Flughafen BI Dashboard")
+st.caption("Datenquelle: FlughafenDB")
 
 tab1, tab2 = st.tabs(["Buchungs- & Umsatzanalyse", "Flugbetrieb & Routen"])
 
