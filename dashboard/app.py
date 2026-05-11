@@ -1,7 +1,9 @@
+import os
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import mysql.connector
+from ai_agent import run_agent, REPORT_PROMPT
 from queries import (
     get_kpis_bookings,
     get_revenue_by_airline,
@@ -65,7 +67,42 @@ if status is not True:
 st.title("Flughafen BI Dashboard")
 st.caption("Datenquelle: FlughafenDB")
 
-tab1, tab2 = st.tabs(["Buchungs- & Umsatzanalyse", "Flugbetrieb & Routen"])
+
+def auto_chart(df, title: str):
+    """Wählt automatisch den passenden Diagrammtyp für einen DataFrame."""
+    if df.empty or len(df.columns) < 2:
+        return None
+    num_cols = df.select_dtypes(include="number").columns.tolist()
+    str_cols = [c for c in df.columns if c not in num_cols]
+    if not num_cols:
+        return None
+    y = num_cols[0]
+    # Zeitreihe
+    time_col = next(
+        (c for c in df.columns if any(k in c.lower() for k in ["month", "datum", "date", "monat"])),
+        None,
+    )
+    if time_col:
+        fig = px.line(
+            df.sort_values(time_col), x=time_col, y=num_cols,
+            title=title, markers=True,
+        )
+        fig.update_layout(height=300, margin=dict(l=0, r=0, t=40, b=0))
+        return fig
+    # Kategorisch → horizontaler Balken
+    if str_cols:
+        df_s = df.sort_values(y)
+        fig = px.bar(
+            df_s, x=y, y=str_cols[0], orientation="h", title=title,
+            color=y, color_continuous_scale="Blues",
+            height=max(280, len(df_s) * 30),
+        )
+        fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=10, t=40, b=0))
+        return fig
+    return None
+
+
+tab1, tab2, tab3 = st.tabs(["Buchungs- & Umsatzanalyse", "Flugbetrieb & Routen", "KI-Analyst"])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — Buchungs- & Umsatzanalyse
@@ -286,3 +323,105 @@ with tab2:
     )
     fig.update_layout(margin=dict(l=0, r=0, t=10, b=0))
     st.plotly_chart(fig, use_container_width=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 3 — KI-Analyst
+# ══════════════════════════════════════════════════════════════════════════════
+
+with tab3:
+    st.header("KI-Analyst")
+    st.caption("Stelle Fragen in natürlicher Sprache – der Agent schreibt SQL, analysiert und visualisiert automatisch.")
+
+    # API-Key prüfen
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        st.warning(
+            "Kein `ANTHROPIC_API_KEY` gefunden. "
+            "Setze die Umgebungsvariable und starte das Dashboard neu:\n\n"
+            "```bash\nexport ANTHROPIC_API_KEY='sk-ant-...'\n"
+            "/Users/elia/Library/Python/3.9/bin/streamlit run dashboard/app.py\n```"
+        )
+        st.stop()
+
+    # Session-State initialisieren
+    if "chat_display" not in st.session_state:
+        st.session_state.chat_display = []
+    if "api_messages" not in st.session_state:
+        st.session_state.api_messages = []
+
+    # Steuerleiste
+    col_ctrl1, col_ctrl2 = st.columns([5, 1])
+    with col_ctrl1:
+        if st.button("Report erstellen", type="primary"):
+            st.session_state._pending = REPORT_PROMPT
+    with col_ctrl2:
+        if st.button("Chat leeren", use_container_width=True):
+            st.session_state.chat_display = []
+            st.session_state.api_messages = []
+            st.rerun()
+
+    # Beispielfragen (nur wenn Chat leer und keine ausstehende Frage)
+    if not st.session_state.chat_display and "_pending" not in st.session_state:
+        st.markdown("**Beispielfragen:**")
+        examples = [
+            "Top 5 Airlines nach Umsatz",
+            "Welche Route ist am rentabelsten?",
+            "Umsatzentwicklung über die Monate",
+            "Vergleiche Auslastung der Top 10 Airlines",
+            "Welcher Wochentag hat die meisten Flüge?",
+            "Welche Airlines haben einen Load Factor über 80%?",
+        ]
+        ex_cols = st.columns(3)
+        for i, ex in enumerate(examples):
+            if ex_cols[i % 3].button(ex, key=f"ex_{i}", use_container_width=True):
+                st.session_state._pending = ex
+
+    # Ausstehende Frage aus Session-State holen
+    pending = None
+    if "_pending" in st.session_state:
+        pending = st.session_state._pending
+        del st.session_state._pending
+
+    # Chat-Verlauf anzeigen
+    for msg in st.session_state.chat_display:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["text"])
+            for q in msg.get("queries", []):
+                with st.expander(q["description"], expanded=True):
+                    fig = auto_chart(q["df"], q["description"])
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                    st.dataframe(q["df"], use_container_width=True, hide_index=True)
+
+    # Eingabe verarbeiten
+    user_input = pending or st.chat_input("Stelle eine Frage zur Flughafen-Datenbank …")
+
+    if user_input:
+        display_text = "Management Report erstellen" if user_input == REPORT_PROMPT else user_input
+
+        with st.chat_message("user"):
+            st.markdown(display_text)
+        st.session_state.chat_display.append(
+            {"role": "user", "text": display_text, "queries": []}
+        )
+
+        with st.chat_message("assistant"):
+            with st.spinner("Analysiere Daten …"):
+                try:
+                    result = run_agent(user_input, st.session_state.api_messages)
+                except Exception as e:
+                    st.error(f"Fehler beim Ausführen des Agenten: {e}")
+                    st.stop()
+
+            st.markdown(result["text"])
+            for q in result["queries"]:
+                with st.expander(q["description"], expanded=True):
+                    fig = auto_chart(q["df"], q["description"])
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                    st.dataframe(q["df"], use_container_width=True, hide_index=True)
+
+        st.session_state.chat_display.append(
+            {"role": "assistant", "text": result["text"], "queries": result["queries"]}
+        )
+        st.session_state.api_messages = result["api_messages"]
