@@ -10,12 +10,16 @@ from queries import (
     get_monthly_revenue,
     get_top_routes_revenue,
     get_load_factor,
+    get_worst_routes_revenue,
+    get_worst_airlines_revenue,
+    get_worst_load_factor,
     get_kpis_flights,
     get_top_routes_flights,
     get_flights_per_airline,
     get_flights_per_weekday,
     get_top_departure_airports,
     get_monthly_flights,
+    get_worst_routes_flights,
     DB_CONFIG,
 )
 
@@ -210,6 +214,57 @@ with tab1:
     fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=10, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
+    # ── Optimierungspotenzial ────────────────────────────────────────────────
+    st.divider()
+    st.subheader("Optimierungspotenzial")
+    st.caption("Schwache Performer — Basis für Streichungs- oder Restrukturierungsentscheide (min. Buchungsschwelle berücksichtigt)")
+
+    col_l, col_r = st.columns(2)
+
+    with col_l:
+        st.markdown("**Schlechteste Routen nach Umsatz** *(min. 50 Buchungen)*")
+        with st.spinner():
+            df_wr = get_worst_routes_revenue()
+        df_wr = df_wr.sort_values("revenue", ascending=False)
+        fig = px.bar(
+            df_wr, x="revenue", y="route", orientation="h",
+            labels={"revenue": "Umsatz ($)", "route": "Route"},
+            color="revenue", color_continuous_scale="Reds_r",
+            height=380,
+            hover_data={"bookings": True, "avg_price": True},
+        )
+        fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=10, t=10, b=0))
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        st.markdown("**Airlines mit geringstem Umsatz** *(min. 500 Buchungen)*")
+        with st.spinner():
+            df_wa = get_worst_airlines_revenue()
+        df_wa = df_wa.sort_values("revenue", ascending=False)
+        fig = px.bar(
+            df_wa, x="revenue", y="airlinename", orientation="h",
+            labels={"revenue": "Umsatz ($)", "airlinename": "Airline"},
+            color="revenue", color_continuous_scale="Oranges_r",
+            height=380,
+            hover_data={"bookings": True, "avg_price": True},
+        )
+        fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=10, t=10, b=0))
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("**Airlines mit niedrigstem Load Factor** *(min. 1 000 Buchungen — leere Sitze kosten Geld)*")
+    with st.spinner():
+        df_wlf = get_worst_load_factor()
+    fig = px.bar(
+        df_wlf, x="airlinename", y="load_factor",
+        labels={"airlinename": "Airline", "load_factor": "Auslastung (%)"},
+        color="load_factor", color_continuous_scale="RdYlGn",
+        height=340, text="load_factor",
+        hover_data={"bookings": True, "capacity": True},
+    )
+    fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+    fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=10, b=0))
+    st.plotly_chart(fig, use_container_width=True)
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — Flugbetrieb & Routen
@@ -323,6 +378,47 @@ with tab2:
     )
     fig.update_layout(margin=dict(l=0, r=0, t=10, b=0))
     st.plotly_chart(fig, use_container_width=True)
+
+    # ── Optimierungspotenzial ────────────────────────────────────────────────
+    st.divider()
+    st.subheader("Optimierungspotenzial")
+    st.caption("Schwache Routen — Basis für Streichungs- oder Konsolidierungsentscheide (min. 10 Flüge)")
+
+    with st.spinner():
+        df_wrf = get_worst_routes_flights()
+
+    col_l, col_r = st.columns(2)
+
+    with col_l:
+        df_wrf_s = df_wrf.sort_values("flights", ascending=False)
+        fig = px.bar(
+            df_wrf_s, x="flights", y="route", orientation="h",
+            labels={"flights": "Anzahl Flüge", "route": "Route"},
+            color="flights", color_continuous_scale="Reds_r",
+            height=380,
+            hover_data={"bookings": True, "avg_price": True},
+        )
+        fig.update_layout(
+            title="Routen mit den wenigsten Flügen",
+            coloraxis_showscale=False, margin=dict(l=0, r=10, t=40, b=0),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        st.markdown("**Kennzahlen dieser Routen**")
+        st.dataframe(
+            df_wrf[["route", "flights", "bookings", "avg_price"]]
+            .rename(columns={
+                "route": "Route",
+                "flights": "Flüge",
+                "bookings": "Buchungen",
+                "avg_price": "Ø Preis ($)",
+            })
+            .sort_values("Flüge"),
+            use_container_width=True,
+            hide_index=True,
+            height=380,
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -170,3 +170,78 @@ def get_monthly_flights() -> pd.DataFrame:
         GROUP BY month
         ORDER BY month
     """)
+
+
+# ── Schwache Performer ────────────────────────────────────────────────────────
+
+def get_worst_routes_revenue() -> pd.DataFrame:
+    """Bottom 10 Routen nach Umsatz — min. 50 Buchungen für Relevanz."""
+    return _query("""
+        SELECT CONCAT(g1.stadt, ' → ', g2.stadt) AS route,
+               COUNT(b.buchung_id)               AS bookings,
+               SUM(b.preis)                      AS revenue,
+               ROUND(AVG(b.preis), 2)            AS avg_price
+        FROM buchung         b
+        JOIN flug            f  ON b.flug_id        = f.flug_id
+        JOIN flughafen_geo   g1 ON f.von            = g1.flughafen_id
+        JOIN flughafen_geo   g2 ON f.nach           = g2.flughafen_id
+        WHERE g1.stadt IS NOT NULL AND g2.stadt IS NOT NULL
+        GROUP BY f.von, f.nach, g1.stadt, g2.stadt
+        HAVING COUNT(b.buchung_id) >= 50
+        ORDER BY revenue ASC
+        LIMIT 10
+    """)
+
+
+def get_worst_airlines_revenue() -> pd.DataFrame:
+    """Bottom 10 Airlines nach Umsatz — min. 500 Buchungen für Relevanz."""
+    return _query("""
+        SELECT fl.firmenname                   AS airlinename,
+               COUNT(b.buchung_id)            AS bookings,
+               SUM(b.preis)                   AS revenue,
+               ROUND(AVG(b.preis), 2)         AS avg_price
+        FROM buchung    b
+        JOIN flug       f  ON b.flug_id      = f.flug_id
+        JOIN fluglinie  fl ON f.fluglinie_id = fl.fluglinie_id
+        GROUP BY fl.fluglinie_id, fl.firmenname
+        HAVING COUNT(b.buchung_id) >= 500
+        ORDER BY revenue ASC
+        LIMIT 10
+    """)
+
+
+def get_worst_load_factor() -> pd.DataFrame:
+    """Airlines mit niedrigstem Load Factor — min. 1 000 Buchungen für Relevanz."""
+    return _query("""
+        SELECT fl.firmenname                                                          AS airlinename,
+               COUNT(b.buchung_id)                                                   AS bookings,
+               SUM(fz.kapazitaet)                                                    AS capacity,
+               ROUND(COUNT(b.buchung_id) / NULLIF(SUM(fz.kapazitaet), 0) * 100, 1) AS load_factor
+        FROM buchung    b
+        JOIN flug       f  ON b.flug_id      = f.flug_id
+        JOIN fluglinie  fl ON f.fluglinie_id = fl.fluglinie_id
+        JOIN flugzeug   fz ON f.flugzeug_id  = fz.flugzeug_id
+        GROUP BY fl.fluglinie_id, fl.firmenname
+        HAVING COUNT(b.buchung_id) >= 1000
+        ORDER BY load_factor ASC
+        LIMIT 10
+    """)
+
+
+def get_worst_routes_flights() -> pd.DataFrame:
+    """Routen mit wenigsten Flügen aber min. 10 Verbindungen (kein Einmalausreisser)."""
+    return _query("""
+        SELECT CONCAT(g1.stadt, ' → ', g2.stadt) AS route,
+               COUNT(f.flug_id)                  AS flights,
+               COUNT(b.buchung_id)               AS bookings,
+               ROUND(AVG(b.preis), 2)            AS avg_price
+        FROM flug            f
+        JOIN flughafen_geo   g1 ON f.von  = g1.flughafen_id
+        JOIN flughafen_geo   g2 ON f.nach = g2.flughafen_id
+        LEFT JOIN buchung    b  ON f.flug_id = b.flug_id
+        WHERE g1.stadt IS NOT NULL AND g2.stadt IS NOT NULL
+        GROUP BY f.von, f.nach, g1.stadt, g2.stadt
+        HAVING COUNT(f.flug_id) >= 10
+        ORDER BY flights ASC
+        LIMIT 10
+    """)
