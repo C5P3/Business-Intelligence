@@ -7,7 +7,26 @@ kostet, und einem lokal erzeugten Begründungs-Memo.
 
 ---
 
+## Vorschau (Screenshots)
+
+> Als Backup, falls das Dashboard nicht gestartet werden kann: Diese beiden
+> Screenshots zeigen die wichtigsten Ansichten.
+
+**Netzwerk-Überblick** — KPIs, Empfehlungs-Verteilung und die Routen-Landkarte
+(Auslastung × Umsatz; unten links = Streich-Kandidaten):
+
+![Netzwerk-Überblick des Route Decision Cockpit](docs/01-netzwerk-ueberblick.png)
+
+**KI-Entscheidungs-Memo** (Tab „Routen-Cockpit") — das lokale LLM begründet die
+Streich-Empfehlung einer einzelnen Route:
+
+![KI-Entscheidungs-Memo, erzeugt vom lokalen LLM](docs/02-ki-memo.png)
+
+---
+
 ## Inhalt
+
+- [Vorschau (Screenshots)](#vorschau-screenshots)
 
 1. [Überblick](#1-überblick)
 2. [Voraussetzungen](#2-voraussetzungen)
