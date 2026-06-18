@@ -14,6 +14,17 @@ Das LLM (Tab 3) begründet nur — die Entscheidung selbst fällt deterministisc
 in scoring.py. Läuft kein Ollama, erscheint ein regelbasiertes Memo.
 """
 
+
+
+# streamlit run app.py
+"""
+cd /Users/elia/Documents/GitHub/Alpstay/Business-Intelligence/dashboard-v3
+source ../.venv/bin/activate
+streamlit run app.py
+"""
+
+
+
 import os
 import pandas as pd
 import streamlit as st
@@ -24,7 +35,6 @@ import queries
 import scoring
 import llm
 
-# ── Page config & Style ───────────────────────────────────────────────────────
 
 st.set_page_config(page_title="Route Decision Cockpit", page_icon="🛫", layout="wide")
 
@@ -41,7 +51,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Farben pro Empfehlung — projektweit konsistent.
 COLORS = {
     scoring.REC_KEEP:  "#2ecc71",
     scoring.REC_WATCH: "#f39c12",
@@ -57,10 +66,6 @@ def money(x, dec=0):
 def llm_models():
     return llm.list_models()
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Sidebar — Steuerung
-# ══════════════════════════════════════════════════════════════════════════════
 
 st.sidebar.title("Steuerung")
 
@@ -89,8 +94,6 @@ with st.sidebar.expander("Schwellen & Schutzregeln"):
                                  "Streichen vorgeschlagen.") / 100.0
     protect_lf = st.slider("Auslastung schützen ab (%)", 60, 100, 85)
 
-# ── Daten laden & analysieren ─────────────────────────────────────────────────
-
 dataset = queries.get_dataset(min_flights=min_flights)
 scorecard = dataset["scorecard"]
 source = dataset["source"]
@@ -102,7 +105,6 @@ analyzed = scoring.analyze(
     protect_top_revenue_pct=protect_rev, protect_load_factor=protect_lf,
 )
 
-# Datenquellen-Banner
 if source == "demo":
     st.warning(
         "**Demo-Modus** — keine Verbindung zur `flughafendb`. Es werden synthetische "
@@ -118,9 +120,6 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "Netzwerk-Überblick", "Streich-Scorecard", "Routen-Cockpit", "Was-wäre-wenn",
 ])
 
-# ══════════════════════════════════════════════════════════════════════════════
-# TAB 1 — Netzwerk-Überblick
-# ══════════════════════════════════════════════════════════════════════════════
 
 with tab1:
     c1, c2, c3, c4, c5, c6 = st.columns(6)
@@ -187,9 +186,6 @@ with tab1:
             if network["total_revenue"] else 0
         st.metric("Top-10-Routen = Anteil am Umsatz", f"{top10_share:.1f}%")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# TAB 2 — Streich-Scorecard
-# ══════════════════════════════════════════════════════════════════════════════
 
 with tab2:
     st.subheader("Streich-Scorecard")
@@ -241,9 +237,6 @@ with tab2:
         file_name="streich_scorecard.csv", mime="text/csv",
     )
 
-# ══════════════════════════════════════════════════════════════════════════════
-# TAB 3 — Routen-Cockpit
-# ══════════════════════════════════════════════════════════════════════════════
 
 with tab3:
     st.subheader("Routen-Cockpit")
@@ -316,7 +309,6 @@ with tab3:
 
     st.divider()
 
-    # ── Impact-Simulation für diese Route ─────────────────────────────────────
     st.markdown("**Impact-Simulation: diese Route streichen**")
     rebook = st.slider("Angenommene Umbuchungsquote (Buchungen, die auf andere Routen wechseln)",
                        0, 80, 0, 5, help="0 % = konservativ (gesamter Umsatz verloren).") / 100.0
@@ -333,7 +325,6 @@ with tab3:
 
     st.divider()
 
-    # ── Lokales LLM-Memo ──────────────────────────────────────────────────────
     st.markdown("**KI-Entscheidungs-Memo (lokales LLM)**")
     models = llm_models()
     if models:
@@ -357,9 +348,6 @@ with tab3:
         else:
             st.caption("Regelbasiertes Memo (kein lokales LLM aktiv).")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# TAB 4 — Was-wäre-wenn (Portfolio)
-# ══════════════════════════════════════════════════════════════════════════════
 
 with tab4:
     st.subheader("Was-wäre-wenn: mehrere Routen streichen")

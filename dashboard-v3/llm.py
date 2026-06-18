@@ -30,7 +30,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "").strip()
 
 # Bevorzugte Modellfamilien (gut im Begründen), wenn nichts vorgegeben ist.
-_PREFERRED = ["qwen2.5", "llama3.1", "llama3.2", "gemma2", "gemma3", "mistral", "phi3", "llama3"]
+_PREFERRED = ["mistral", "qwen2.5", "llama3.1", "llama3.2", "gemma2", "gemma3", "phi3", "llama3"]
 
 _TIMEOUT_SHORT = 3
 _TIMEOUT_GEN = 90

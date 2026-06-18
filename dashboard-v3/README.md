@@ -15,12 +15,12 @@ kostet, und einem lokal erzeugten Begründungs-Memo.
 **Netzwerk-Überblick** — KPIs, Empfehlungs-Verteilung und die Routen-Landkarte
 (Auslastung × Umsatz; unten links = Streich-Kandidaten):
 
-![Netzwerk-Überblick des Route Decision Cockpit](docs/01-netzwerk-ueberblick.png)
+<img src="docs/01-netzwerk-ueberblick.png" alt="Netzwerk-Überblick des Route Decision Cockpit" width="100%" />
 
 **KI-Entscheidungs-Memo** (Tab „Routen-Cockpit") — das lokale LLM begründet die
 Streich-Empfehlung einer einzelnen Route:
 
-![KI-Entscheidungs-Memo, erzeugt vom lokalen LLM](docs/02-ki-memo.png)
+<img src="docs/02-ki-memo.png" alt="KI-Entscheidungs-Memo, erzeugt vom lokalen LLM" width="100%" />
 
 ---
 
@@ -268,13 +268,13 @@ Modell. Wähle nach Arbeitsspeicher (RAM):
 | RAM / Maschine        | Empfehlung                    | Befehl |
 |-----------------------|-------------------------------|--------|
 | 8 GB                  | klein & schnell               | `ollama pull llama3.2:3b` |
+| 8 GB                  | solide 7B-Wahl                | `ollama pull mistral` |
 | 16 GB                 | guter Kompromiss              | `ollama pull qwen2.5:7b` |
 | 32 GB +               | stärkste Begründungen         | `ollama pull qwen2.5:14b` |
 | Intel-Mac / nur CPU   | klein (langsamer, läuft aber) | `ollama pull llama3.2:3b` |
 
-**`llama3.2:3b` ist die sichere Default-Wahl** — läuft überall, auch ohne GPU, und
-reicht für die kurzen Memos. Gibt die Maschine mehr her, später auf `qwen2.5:7b`
-wechseln (deutlich bessere Begründungen).
+**`mistral:latest`** (4.4 GB, 7B-Parameter) ist eine solide Wahl — gut im Formulieren,
+läuft auf 8 GB RAM. Das Dashboard erkennt es automatisch.
 
 ### Schritt 3 — testen & verbinden
 
