@@ -98,29 +98,41 @@ Memo. Das Dashboard funktioniert also auch ohne LLM.
 
 ## 3. Installation & Start
 
-> **Wichtig:** `app.py` liegt im Ordner `dashboard-v3/`. Streamlit-Apps werden
-> **immer** mit `streamlit run` gestartet — nicht mit `python app.py`.
+> **Wichtig:** Streamlit-Apps werden **immer** mit `streamlit run` gestartet — nicht mit `python app.py`.
 
-### Erstmalige Einrichtung (empfohlen, mit virtueller Umgebung)
+### Schritt 1 — Repository klonen
 
 ```bash
-cd /Users/elia/Documents/GitHub/Alpstay/Business-Intelligence/dashboard-v3
-python3 -m venv .venv          # einmalig eine isolierte Umgebung anlegen
-source .venv/bin/activate      # aktivieren  (Windows: .venv\Scripts\activate)
+git clone https://github.com/elia04/Business-Intelligence.git
+cd Business-Intelligence/dashboard-v3
+```
+
+### Schritt 2 — Virtuelle Umgebung anlegen und Pakete installieren
+
+```bash
+python3 -m venv .venv                  # einmalig — legt .venv/ im aktuellen Ordner an
+source .venv/bin/activate              # macOS / Linux
+# Windows:  .venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+Sobald `(.venv)` vorne im Terminal-Prompt steht, sind `pip`, `python` und `streamlit` alle aus derselben Umgebung — kein `ModuleNotFoundError` mehr.
+
+### Schritt 3 — Dashboard starten
+
+```bash
 streamlit run app.py
 ```
 
-Sobald `(.venv)` vorne im Terminal-Prompt steht, zeigen `pip`, `python` und
-`streamlit` alle auf dieselbe Umgebung. Nach `streamlit run` öffnet sich
-automatisch ein Browser-Tab unter **http://localhost:8501** — daran erkennst du,
-dass es läuft.
+Der Browser öffnet sich automatisch unter **http://localhost:8501**.
 
-### Jeder weitere Start
+---
+
+### Jeder weitere Start (nach einmaliger Einrichtung)
 
 ```bash
-cd /Users/elia/Documents/GitHub/Alpstay/Business-Intelligence/dashboard-v3
-source .venv/bin/activate
+cd Business-Intelligence/dashboard-v3
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
 streamlit run app.py
 ```
 
