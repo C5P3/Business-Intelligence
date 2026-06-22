@@ -18,7 +18,7 @@ in scoring.py. Läuft kein Ollama, erscheint ein regelbasiertes Memo.
 
 # streamlit run app.py
 """
-cd Business-Intelligence/dashboard-v3
+cd /Users/elia/Github/Business-Intelligence/dashboard-v3
 source .venv/bin/activate
 streamlit run app.py
 """
